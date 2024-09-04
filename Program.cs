@@ -1,36 +1,50 @@
 using JwtTokenBasedApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<IJWTManagerRepository, JWTManagerRepository>();
+builder.Services.AddControllers();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    //options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(o =>
 {
+    o.SaveToken = true;
     o.TokenValidationParameters = new TokenValidationParameters
     {
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey
             (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = false,
+        //ValidateIssuer = true,
+        //ValidateAudience = true,
+        //ValidateLifetime = false,
+        //ValidateIssuerSigningKey = true
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true
     };
 });
-builder.Services.AddAuthorization();
+
+
+
+//builder.Services.AddAuthorization();
 var app = builder.Build();
+
 app.UseHttpsRedirection();
+app.MapControllers();
+/*
 app.MapGet("/security/getMessage", () => "Hello World!").RequireAuthorization();
 app.MapPost("/security/createToken",
-[AllowAnonymous] (User user) =>
+[AllowAnonymous] (Users user) =>
 {
     if (user.UserName == "mojidul" && user.Password == "Admin_123")
     {
@@ -63,6 +77,7 @@ app.MapPost("/security/createToken",
     }
     return Results.Unauthorized();
 });
+*/
 app.UseAuthentication();
 app.UseAuthorization();
 app.Run();
